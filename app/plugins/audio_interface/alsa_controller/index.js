@@ -709,6 +709,9 @@ ControllerAlsa.prototype.saveVolumeOptions = function (data) {
   if (currentState && currentState.volume !== undefined && currentState.mute !== undefined) {
     var currentVolume = currentState.volume;
     var currentMute = currentState.mute;
+  } else {
+    var currentVolume = data.volumestart.value;
+    var currentMute = false;
   }
 
   var mpdvalue = self.config.get('mpdvolume', false);
@@ -1702,4 +1705,11 @@ ControllerAlsa.prototype.getAlsaCardsWithoutI2SDAC = function (data) {
     }
 
     return cardsWithoutI2S;
+};
+
+ControllerAlsa.prototype.getPlaybackConfig = function () {
+    var self = this;
+    self.logger.info('_______ DUMP PLAYBACK CONFIG ________\n' + JSON.stringify(self.config.data));
+    self.logger.info('_____________ END DUMP ______________');
+    return self.config;
 };

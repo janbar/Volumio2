@@ -65,6 +65,19 @@ function CoreCommandRouter (server) {
 
   this.startupSound();
   this.closeModals();
+
+  // Fix: Load/Save the volume setting on startup
+  var pbconfig = this.executeOnPlugin('audio_interface', 'alsa_controller', 'getPlaybackConfig');
+  var data = {
+    "mixer_type":{"value": pbconfig.get('mixer_type')},
+    "mixer":{"value": pbconfig.get('mixer')},
+    "volumestart":{"value": pbconfig.get('volumestart')},
+    "volumemax":{"value": pbconfig.get('volumemax')},
+    "volumesteps":{"value": pbconfig.get('volumesteps')},
+    "volumecurvemode":{"value": pbconfig.get('volumecurvemode')},
+    "mpdvolume": pbconfig.get('mpdvolume')
+  };
+  this.executeOnPlugin('audio_interface', 'alsa_controller', 'saveVolumeOptions', data);
 }
 
 // Methods usually called by the Client Interfaces ----------------------------------------------------------------------------
