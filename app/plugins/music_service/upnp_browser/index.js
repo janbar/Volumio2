@@ -66,7 +66,8 @@ ControllerUPNPBrowser.prototype.onStart = function () {
       xmlToJson(headers.LOCATION, function (err, data) {
         try {
           if (err) {
-            return self.logger.error(err);
+            //return self.logger.error(err);
+            return;
           }
 
           var device = (data.root.device || [])[0];
@@ -102,12 +103,17 @@ ControllerUPNPBrowser.prototype.onStart = function () {
           var services = serviceList.service || [];
           var ContentDirectoryService = services.find(function (service) {
             var serviceType = (service.serviceType || [])[0];
-            return (serviceType === 'urn:schemas-upnp-org:service:ContentDirectory:1');
+            return (serviceType.startsWith('urn:schemas-upnp-org:service:ContentDirectory:'));
           });
           if (!ContentDirectoryService) {
             return;
           }
+          if ((ContentDirectoryService.controlURL || [])[0].charAt(0) !== '/') {
+            server.location += '/';
+          }
           server.location += ((ContentDirectoryService.controlURL || [])[0] || '');
+          // Template version follows the base of its type
+          server.cdsType = ((ContentDirectoryService.serviceType || [])[0]).replace('urn:schemas-upnp-org:service:', '');
 
           var duplicate = false;
           for (var i = 0; i < self.DLNAServers.length; i++) {
@@ -208,7 +214,7 @@ ControllerUPNPBrowser.prototype.listRoot = function () {
         service: 'upnp_browser',
         type: 'streaming-category',
         'title': this.DLNAServers[i].name,
-        'uri': 'upnp/' + this.DLNAServers[i].location + '@0', // @ separator, 0 for root element,
+        'uri': 'upnp/' + this.DLNAServers[i].location + '@' + this.DLNAServers[i].cdsType + '@0', // @ separator, 0 for root element,
         'albumart': this.DLNAServers[i].icon
       });
     } else {
@@ -225,12 +231,13 @@ ControllerUPNPBrowser.prototype.listUPNP = function (data) {
 
   var defer = libQ.defer();
   var address = data.split('@')[0];
+  var version = data.split('@')[1];
   var info = true;
   var curUri = 'upnp/' + data;
   var albumart = '';
   var title = '';
   if (address.startsWith('folder/')) { address = address.replace('folder/', ''); }
-  var id = data.split('@')[1];
+  var id = data.split('@')[2];
   var obj = {
     'navigation': {
       'prev': {
@@ -247,7 +254,7 @@ ControllerUPNPBrowser.prototype.listUPNP = function (data) {
     }
   };
 
-  browseDLNAServer(id, address, {}, (err, data) => {
+  browseDLNAServer(id, address, version, {}, (err, data) => {
     if (err) {
       self.logger.error('Error browsing' + id + ':' + err);
       return defer.reject('');
@@ -269,7 +276,7 @@ ControllerUPNPBrowser.prototype.listUPNP = function (data) {
           if (data.container[i].title) {
                     	title = data.container[i].title;
           }
-          var path = address + '@' + data.container[i].id;
+          var path = address + '@' + version + '@' + data.container[i].id;
           var albumart = self.getAlbumArt({artist: artist, album: title}, path, self.getAlbumartClass(data.container[i].class));
 
           obj.navigation.lists[0].items.push({
@@ -279,7 +286,7 @@ ControllerUPNPBrowser.prototype.listUPNP = function (data) {
             'artist': artist,
             'albumart': albumart,
             'album': '',
-            'uri': 'upnp/folder/' + address + '@' + data.container[i].id
+            'uri': 'upnp/folder/' + address + '@' + version + '@' + data.container[i].id
           });
         }
       }
@@ -289,7 +296,7 @@ ControllerUPNPBrowser.prototype.listUPNP = function (data) {
       for (var i = 0; i < data.item.length; i++) {
         if (data.item[i].class == 'object.item.audioItem.musicTrack') {
           var item = data.item[i];
-          var path = address + '@' + item.id;
+          var path = address + '@' + version + '@' + item.id;
 
           var albumart = self.getAlbumArt({artist: item.artist, album: item.album}, path, 'music');
           if (item.image != undefined && item.image.length > 0) {
@@ -298,7 +305,7 @@ ControllerUPNPBrowser.prototype.listUPNP = function (data) {
           var track = {
             'service': 'upnp_browser',
             'type': 'song',
-            'uri': 'upnp/' + address + '@' + item.id,
+            'uri': 'upnp/' + address + '@' + version + '@' + item.id,
             'title': item.title,
             'artist': item.artist,
             'album': item.album,
@@ -308,13 +315,13 @@ ControllerUPNPBrowser.prototype.listUPNP = function (data) {
         }
       }
     }
-    browseDLNAServer(id, address, {browseFlag: 'BrowseMetadata'}, (err, data) => {
+    browseDLNAServer(id, address, version, {browseFlag: 'BrowseMetadata'}, (err, data) => {
       if (err) {
         self.logger.error(err);
         return defer.reject('');
       }
       if (data && data.container && data.container[0] && data.container[0].parentId && data.container[0].parentId != '-1') {
-        obj.navigation.prev.uri = 'upnp/' + address + '@' + data.container[0].parentId;
+        obj.navigation.prev.uri = 'upnp/' + address + '@' + version + '@' + data.container[0].parentId;
         title = data.container[0].title;
         		var artist = '';
         		if (data.container[0].artist) {
@@ -372,13 +379,14 @@ ControllerUPNPBrowser.prototype.getAlbumartClass = function (data) {
 // 	var self = this;
 // 	var defer = libQ.defer();
 // 	var address = curUri.split("@")[0];
-// 	var id = curUri.split("@")[1];
+// 	var cdsType = curUri.split("@")[1];
+// 	var id = curUri.split("@")[2];
 //
-// 	browseDLNAServer(id, address, {}, (err, data) => {
+// 	browseDLNAServer(id, address, version, {}, (err, data) => {
 // 		var obj = {
 // 			"navigation":{
 // 				"prev": {
-// 					"uri": "dlna:" + address + "@" + id
+// 					"uri": "dlna:" + address + "@" + cdsType + "@" + id
 // 				},
 // 				"lists": [
 // 					{
@@ -398,7 +406,7 @@ ControllerUPNPBrowser.prototype.getAlbumartClass = function (data) {
 // 				"title": data.container[i].title,
 // 				"artist": "",
 //         "album": "",
-// 				"uri": "dlna:" + address + "@" + data.container[i].id
+// 				"uri": "dlna:" + address + "@" + cdsType + "@" + data.container[i].id
 // 			});
 // 		}
 // 	});
@@ -473,9 +481,10 @@ ControllerUPNPBrowser.prototype.explodeUri = function (uri) {
     uri = uri.replace('folder/');
   }
   var address = uri.split('@')[0];// Getting server address
-  var id = uri.split('@')[1];// Getting item ID
+  var version = uri.split('@')[1];// Getting version type
+  var id = uri.split('@')[2];// Getting item ID
   var browseFlag = folder ? 'BrowseDirectChildren' : 'BrowseMetadata';
-  browseDLNAServer(id, address, {browseFlag: browseFlag}, (err, data) => {
+  browseDLNAServer(id, address, version, {browseFlag: browseFlag}, (err, data) => {
     if (err) {
       self.logger.error(err);
       return;

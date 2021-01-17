@@ -14,7 +14,7 @@ const entities = new Entities();
 var debug = false;
 
 // function to build the xml required for the saop request to the DLNA server
-const buildRequestXml = function (id, options) {
+const buildRequestXml = function (id, cdsType, options) {
   // fill in the defaults
   if (!options.browseFlag) {
     options.browseFlag = 'BrowseDirectChildren';
@@ -41,7 +41,7 @@ const buildRequestXml = function (id, options) {
     .att('s:encodingStyle', 'http://schemas.xmlsoap.org/soap/encoding/')
     .att('xmlns:s', 'http://schemas.xmlsoap.org/soap/envelope/')
     .ele('s:Body')
-    .ele('u:Browse', { 'xmlns:u': 'urn:schemas-upnp-org:service:ContentDirectory:1'})
+    .ele('u:Browse', { 'xmlns:u': 'urn:schemas-upnp-org:service:' + cdsType})
     .ele('ObjectID', id)
     .up().ele('BrowseFlag', options.browseFlag)
     .up().ele('Filter', options.filter)
@@ -52,13 +52,13 @@ const buildRequestXml = function (id, options) {
 };
 
 // function that allow you to browse a DLNA server
-var browseServer = function (id, controlUrl, options, callback) {
+var browseServer = function (id, controlUrl, cdsType, options, callback) {
   var parser = new xmltojs.Parser({explicitCharKey: true});
   const requestUrl = url.parse(controlUrl);
 
   var requestXml;
   try {
-    requestXml = buildRequestXml(id, options);
+    requestXml = buildRequestXml(id, cdsType, options);
   } catch (err) {
     // something must have been wrong with the options specified
     callback(err);
@@ -71,7 +71,7 @@ var browseServer = function (id, controlUrl, options, callback) {
     port: requestUrl.port,
     path: requestUrl.path,
     method: 'POST',
-    headers: { 'SOAPACTION': '"urn:schemas-upnp-org:service:ContentDirectory:1#Browse"',
+    headers: { 'SOAPACTION': '"urn:schemas-upnp-org:service:' + cdsType + '#Browse"',
       'Content-Length': Buffer.byteLength(requestXml, 'utf8'),
       'Content-Type': 'text/xml',
       'User-Agent': 'Android UPnP/1.0 DLNADOC/1.50'}
