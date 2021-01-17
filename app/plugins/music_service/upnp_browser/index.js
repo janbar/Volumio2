@@ -56,6 +56,10 @@ ControllerUPNPBrowser.prototype.onStart = function () {
   client.on('response', function responseHandler (headers, code, rinfo) {
     if (headers != undefined && headers.LOCATION != undefined && headers.LOCATION.length > 0) {
       var urlraw = headers.LOCATION.replace('http://', '').split('/')[0].split(':');
+      // Do not process response with IPv6 location: http://[ipv6]:port
+      if (urlraw[0].charAt(0) === '[') {
+        return;
+      }
       var server = {'url': 'http://' + urlraw[0], 'port': urlraw[1], 'endpoint': headers};
       var location = server;
 
