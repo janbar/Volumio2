@@ -442,7 +442,15 @@ var processExpressRequest = function (req, res) {
     .fail(function () {
       res.setHeader('Cache-Control', 'public, max-age=' + maxage);
       if (icon !== undefined) {
-        res.sendFile(__dirname + '/icons/' + icon + '.svg');
+        try {
+          res.sendFile(__dirname + '/icons/' + icon + '.svg');
+        } catch(e) {
+          try {
+            res.sendFile(__dirname + '/icons/' + icon + '.jpg');
+          } catch(e) {
+            res.sendFile(__dirname + '/icons/' + icon + '.png');
+          }
+        }
       } else if (sectionimage !== undefined) {
         var pluginPaths = ['/volumio/app/plugins/', '/data/plugins/', '/myvolumio/plugins/', '/data/myvolumio/plugins/'];
         try {
