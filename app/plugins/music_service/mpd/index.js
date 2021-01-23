@@ -3089,6 +3089,7 @@ ControllerMpd.prototype.listAlbumSongs = function (uri, index, previous) {
           var name = path.split('/').pop();
 
           var artist = self.searchFor(lines, i + 1, 'Artist:');
+          var albumartist = self.searchFor(lines, i + 1, 'AlbumArtist:');
           var album = self.searchFor(lines, i + 1, 'Album:');
           var year = self.searchFor(lines, i + 1, 'Date:');
 
@@ -3138,7 +3139,7 @@ ControllerMpd.prototype.listAlbumSongs = function (uri, index, previous) {
                 response.navigation.info = {
                   uri: uri,
                   service: 'mpd',
-                  artist: isOrphanAlbum ? '*' : artist,
+                  artist: isOrphanAlbum ? '*' : (albumartist !== '' ? albumartist : artist),
                   album: album,
                   albumart: albumart,
                   year: isOrphanAlbum ? '' : year,
