@@ -209,7 +209,7 @@ case "$1" in
                 internet "$@"
             ;;
 	    logdump)
-	        /usr/bin/node /volumio/logsubmit.js "$2" nosubmit
+	        /usr/local/bin/node /volumio/logsubmit.js "$2" nosubmit
             ;;
 	    init-edit)
 		init-edit $2
@@ -245,7 +245,7 @@ correspondent folder in data"
                     echo "This command will update the plugin on your device"
                     echo ""
                 fi
-               /usr/bin/node /volumio/pluginhelper.js "$2"
+               /usr/local/bin/node /volumio/pluginhelper.js "$2"
             else
                 echo ""
                 echo "---- VOLUMIO PLUGIN HELPER ----"
@@ -262,7 +262,7 @@ correspondent folder in data"
             fi
             ;;
             updater)
-                /usr/bin/node /volumio/update-helper.js "$@"
+                /usr/local/bin/node /volumio/update-helper.js "$@"
             ;;
         *)
             doc

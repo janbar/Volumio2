@@ -18,7 +18,7 @@ echo "Stopping Volumio service"
 if [ ! -d "$NODEMON_DIR" ]; then
   echo "Installing nodemon"
   cd /volumio || exit
-  /usr/bin/npm install nodemon
+  /usr/local/bin/npm install nodemon
 fi
 
 if [ ! -f "$DEV_FILE" ]; then
