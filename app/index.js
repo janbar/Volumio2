@@ -46,6 +46,7 @@ function CoreCommandRouter (server) {
   var pluginPromise = this.pluginManager.startPlugins();
 
   this.loadI18nStrings();
+  this.musicLibrary.updateBrowseSourcesLang();
 
   // Start the state machine
   this.stateMachine = new (require('./statemachine.js'))(this);
@@ -62,13 +63,12 @@ function CoreCommandRouter (server) {
 
   // Wait for plugin startup to complete before playing the startup sound as the
   // plugins may need to be fully active before sound can play properly 
-  pluginPromise.then(() => {
-    this.musicLibrary.updateBrowseSourcesLang();
-    this.pushConsoleMessage('BOOT COMPLETED');
-    metrics.log('CommandRouter');
-
-    this.startupSound();
-    this.closeModals();
+  pluginPromise.then(() => {	  
+	  this.pushConsoleMessage('BOOT COMPLETED');
+	  metrics.log('CommandRouter');
+	  
+	  this.startupSound();
+	  this.closeModals();
   });
 }
 
